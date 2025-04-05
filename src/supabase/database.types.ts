@@ -152,7 +152,12 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      increment_registered_participants: {
+        Args: {
+          contract_address: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;
