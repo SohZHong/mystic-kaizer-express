@@ -36,13 +36,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'battleLogs_battle_id_fkey';
-            columns: ['battle_id'];
-            isOneToOne: false;
-            referencedRelation: 'gameLobbies';
-            referencedColumns: ['battle_id'];
-          },
-          {
             foreignKeyName: 'battleLogs_code_fkey';
             columns: ['code'];
             isOneToOne: false;

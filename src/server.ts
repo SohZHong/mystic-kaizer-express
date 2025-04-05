@@ -123,8 +123,8 @@ app.post('/webhook', async (req: Request, res: Response) => {
           .from('gameLobbies')
           .update({ battle_id: battleId })
           .match({
-            player1,
-            player2,
+            player1_address: player1,
+            player2_address: player2,
             status: 'playing',
           });
         if (error) {
