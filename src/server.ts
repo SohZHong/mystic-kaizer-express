@@ -147,9 +147,25 @@ app.post('/webhook', async (req: Request, res: Response) => {
           (input: EventField) => input.name === 'damage'
         )?.value;
 
+        // Query Supabase for the matching event to get the code
+        const { data: lobby, error: lobbyError } = await supabase
+          .from('gameLobbies')
+          .select('code')
+          .eq('battle_id', battleId)
+          .single();
+
+        if (lobbyError) {
+          console.error(
+            'Error retrieving code from gameLobbies table:',
+            lobbyError
+          );
+          throw lobbyError;
+        }
+
         // Save to Supabase
         const { data, error } = await supabase.from('battleLogs').insert([
           {
+            code: lobby.code,
             battle_id: battleId,
             attacker,
             damage,
