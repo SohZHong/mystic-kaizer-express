@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import config from './config/config';
 import { Database } from './supabase/database.types';
-import { Event, EventField } from '@curvegrid/multibaas-sdk';
+import { ContractsApi, Event, EventField } from '@curvegrid/multibaas-sdk';
 
 const app = express();
 
@@ -11,10 +11,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Configurations
-const { port, supabaseUrl, supabaseAnonKey } = config;
+const { port, supabaseUrl, supabaseAnonKey, mbConfig } = config;
 
 // Initialize Supabase
 const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+
+const contractsApi = new ContractsApi(mbConfig);
 
 // Webhook Receiver
 app.post('/webhook', async (req: Request, res: Response) => {
@@ -77,13 +79,18 @@ app.post('/webhook', async (req: Request, res: Response) => {
           },
         ]);
 
-        //
-
         if (error) {
           console.error('Error inserting into Supabase:', error);
+          throw error;
         } else {
           console.log('Successfully saved event:', data);
         }
+
+        // Link to multibaas
+        await contractsApi.linkAddressContract('ethereum', eventContract, {
+          label: `eventImplementation${eventId}`,
+          startingBlock: 'latest',
+        });
       }
     }
 
