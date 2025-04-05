@@ -3,13 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import config from './config/config';
 import { Database } from './supabase/database.types';
 import {
-  AddressAlias,
   AddressesApi,
   ContractsApi,
   Event,
   EventField,
 } from '@curvegrid/multibaas-sdk';
-import generateLobbyCode from './utils/code-generation';
 
 const app = express();
 
@@ -170,8 +168,29 @@ app.post('/webhook', async (req: Request, res: Response) => {
       } else {
         console.log('Successfully saved event:', data);
       }
-    }
+    } else if (event.event.name === 'EventStarted') {
+      const inputs = event.event.inputs;
+      const contractAddress = event.event.contract.address;
+      // Extract necessary fields
+      const rewardCount = inputs.find(
+        (input: EventField) => input.name === 'rewardCount'
+      )?.value;
 
+      // Update Supabase Record
+      const { data, error } = await supabase
+        .from('events')
+        .update({ is_started: true, reward_count: rewardCount })
+        .match({
+          address: contractAddress,
+        });
+
+      if (error) {
+        console.error('Error inserting into Supabase:', error);
+        throw error;
+      } else {
+        console.log('Successfully saved event:', data);
+      }
+    }
     res.status(200).json({ success: true });
   } catch (err) {
     console.error('Error processing webhook:', err);

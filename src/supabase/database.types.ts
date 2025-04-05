@@ -12,21 +12,24 @@ export type Database = {
       battleLogs: {
         Row: {
           attacker: string | null;
-          battle_id: number;
+          battle_id: number | null;
+          code: string | null;
           created_at: string;
           damage: number | null;
           id: number;
         };
         Insert: {
           attacker?: string | null;
-          battle_id: number;
+          battle_id?: number | null;
+          code?: string | null;
           created_at?: string;
           damage?: number | null;
           id?: number;
         };
         Update: {
           attacker?: string | null;
-          battle_id?: number;
+          battle_id?: number | null;
+          code?: string | null;
           created_at?: string;
           damage?: number | null;
           id?: number;
@@ -39,6 +42,13 @@ export type Database = {
             referencedRelation: 'gameLobbies';
             referencedColumns: ['battle_id'];
           },
+          {
+            foreignKeyName: 'battleLogs_code_fkey';
+            columns: ['code'];
+            isOneToOne: false;
+            referencedRelation: 'gameLobbies';
+            referencedColumns: ['code'];
+          },
         ];
       };
       events: {
@@ -48,6 +58,7 @@ export type Database = {
           description: string | null;
           event_id: number | null;
           id: number;
+          is_started: boolean;
           location: string | null;
           name: string | null;
           organizer: string | null;
@@ -62,6 +73,7 @@ export type Database = {
           description?: string | null;
           event_id?: number | null;
           id?: number;
+          is_started?: boolean;
           location?: string | null;
           name?: string | null;
           organizer?: string | null;
@@ -76,6 +88,7 @@ export type Database = {
           description?: string | null;
           event_id?: number | null;
           id?: number;
+          is_started?: boolean;
           location?: string | null;
           name?: string | null;
           organizer?: string | null;
