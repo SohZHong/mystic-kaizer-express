@@ -88,7 +88,7 @@ export type Database = {
       };
       gameLobbies: {
         Row: {
-          battle_id: number;
+          battle_id: number | null;
           code: string;
           created_at: string;
           id: number;
@@ -103,7 +103,7 @@ export type Database = {
           status: string;
         };
         Insert: {
-          battle_id: number;
+          battle_id?: number | null;
           code: string;
           created_at?: string;
           id?: number;
@@ -118,7 +118,7 @@ export type Database = {
           status?: string;
         };
         Update: {
-          battle_id?: number;
+          battle_id?: number | null;
           code?: string;
           created_at?: string;
           id?: number;

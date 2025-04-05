@@ -2,7 +2,13 @@ import express, { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import config from './config/config';
 import { Database } from './supabase/database.types';
-import { ContractsApi, Event, EventField } from '@curvegrid/multibaas-sdk';
+import {
+  AddressAlias,
+  AddressesApi,
+  ContractsApi,
+  Event,
+  EventField,
+} from '@curvegrid/multibaas-sdk';
 import generateLobbyCode from './utils/code-generation';
 
 const app = express();
@@ -18,6 +24,7 @@ const { port, supabaseUrl, supabaseAnonKey, mbConfig } = config;
 const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 const contractsApi = new ContractsApi(mbConfig);
+const addressApi = new AddressesApi(mbConfig);
 
 // Webhook Receiver
 app.post('/webhook', async (req: Request, res: Response) => {
@@ -81,9 +88,16 @@ app.post('/webhook', async (req: Request, res: Response) => {
         console.log('Successfully saved event:', data);
       }
 
+      // Create an alias for the new address
+      const alias = `eventimplementation${eventId}`;
+      await addressApi.setAddress('ethereum', {
+        alias,
+        address: eventContract,
+      });
+
       // Link to multibaas
-      await contractsApi.linkAddressContract('ethereum', eventContract, {
-        label: `eventImplementation${eventId}`,
+      await contractsApi.linkAddressContract('ethereum', alias, {
+        label: `eventimplementation`,
         startingBlock: 'latest',
       });
     } else if (event.event.name === 'BattleStarted') {
@@ -113,21 +127,14 @@ app.post('/webhook', async (req: Request, res: Response) => {
       )?.value;
 
       // Save to Supabase
-      const { data, error } = await supabase.from('gameLobbies').insert([
-        {
-          code: generateLobbyCode(),
-          battle_id: battleId,
-          player1_address: player1,
-          player1_atk_min: Number(player1MinDmg),
-          player1_atk_max: Number(player1MaxDmg),
-          player1_health: 100,
-          player2_address: player2,
-          player2_atk_min: player1MinDmg,
-          player2_atk_max: player2MaxDmg,
-          player2_health: 100,
-        },
-      ]);
-
+      const { data, error } = await supabase
+        .from('gameLobbies')
+        .update({ battle_id: battleId })
+        .match({
+          player1,
+          player2,
+          status: 'playing',
+        });
       if (error) {
         console.error('Error inserting into Supabase:', error);
         throw error;
