@@ -12,32 +12,32 @@ export type Database = {
       battleLogs: {
         Row: {
           attacker: string | null;
-          code: string | null;
+          battle_id: number;
           created_at: string;
           damage: number | null;
           id: number;
         };
         Insert: {
           attacker?: string | null;
-          code?: string | null;
+          battle_id: number;
           created_at?: string;
           damage?: number | null;
           id?: number;
         };
         Update: {
           attacker?: string | null;
-          code?: string | null;
+          battle_id?: number;
           created_at?: string;
           damage?: number | null;
           id?: number;
         };
         Relationships: [
           {
-            foreignKeyName: 'battleLogs_code_fkey';
-            columns: ['code'];
+            foreignKeyName: 'battleLogs_battle_id_fkey';
+            columns: ['battle_id'];
             isOneToOne: false;
             referencedRelation: 'gameLobbies';
-            referencedColumns: ['code'];
+            referencedColumns: ['battle_id'];
           },
         ];
       };
@@ -88,6 +88,7 @@ export type Database = {
       };
       gameLobbies: {
         Row: {
+          battle_id: number;
           code: string;
           created_at: string;
           id: number;
@@ -102,6 +103,7 @@ export type Database = {
           status: string;
         };
         Insert: {
+          battle_id: number;
           code: string;
           created_at?: string;
           id?: number;
@@ -116,6 +118,7 @@ export type Database = {
           status?: string;
         };
         Update: {
+          battle_id?: number;
           code?: string;
           created_at?: string;
           id?: number;

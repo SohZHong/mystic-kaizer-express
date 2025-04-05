@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import config from './config/config';
 import { Database } from './supabase/database.types';
 import { ContractsApi, Event, EventField } from '@curvegrid/multibaas-sdk';
+import generateLobbyCode from './utils/code-generation';
 
 const app = express();
 
@@ -21,76 +22,146 @@ const contractsApi = new ContractsApi(mbConfig);
 // Webhook Receiver
 app.post('/webhook', async (req: Request, res: Response) => {
   try {
-    const events: Event[] = req.body;
+    const event: Event = req.body;
 
-    for (const event of events) {
-      if (event.event.name === 'EventCreated') {
-        const inputs = event.event.inputs;
+    if (event.event.name === 'EventCreated') {
+      const inputs = event.event.inputs;
 
-        // Extract necessary fields
-        const eventId = inputs.find(
-          (input: EventField) => input.name === 'eventId'
-        )?.value;
-        const organizer = inputs.find(
-          (input: EventField) => input.name === 'organizer'
-        )?.value;
-        const eventContract = inputs.find(
-          (input: EventField) => input.name === 'eventContract'
-        )?.value;
-        const name = inputs.find(
-          (input: EventField) => input.name === 'name'
-        )?.value;
-        const description = inputs.find(
-          (input: EventField) => input.name === 'description'
-        )?.value;
-        const location = inputs.find(
-          (input: EventField) => input.name === 'location'
-        )?.value;
-        const baseUri = inputs.find(
-          (input: EventField) => input.name === 'baseUri'
-        )?.value;
-        const participantLimit = inputs.find(
-          (input: EventField) => input.name === 'participantLimit'
-        )?.value;
-        const startDate = inputs.find(
-          (input: EventField) => input.name === 'startDate'
-        )?.value;
-        const rewardCount = inputs.find(
-          (input: EventField) => input.name === 'rewardCount'
-        )?.value;
+      // Extract necessary fields
+      const eventId = inputs.find(
+        (input: EventField) => input.name === 'eventId'
+      )?.value;
+      const organizer = inputs.find(
+        (input: EventField) => input.name === 'organizer'
+      )?.value;
+      const eventContract = inputs.find(
+        (input: EventField) => input.name === 'eventContract'
+      )?.value;
+      const name = inputs.find(
+        (input: EventField) => input.name === 'name'
+      )?.value;
+      const description = inputs.find(
+        (input: EventField) => input.name === 'description'
+      )?.value;
+      const location = inputs.find(
+        (input: EventField) => input.name === 'location'
+      )?.value;
+      const baseUri = inputs.find(
+        (input: EventField) => input.name === 'baseUri'
+      )?.value;
+      const participantLimit = inputs.find(
+        (input: EventField) => input.name === 'participantLimit'
+      )?.value;
+      const startDate = inputs.find(
+        (input: EventField) => input.name === 'startDate'
+      )?.value;
+      const rewardCount = inputs.find(
+        (input: EventField) => input.name === 'rewardCount'
+      )?.value;
 
-        if (!eventId || !organizer || !eventContract) {
-          console.warn('Missing fields in EventCreated webhook:', inputs);
-          continue;
-        }
+      // Save to Supabase
+      const { data, error } = await supabase.from('events').insert([
+        {
+          event_id: eventId,
+          organizer,
+          address: eventContract,
+          name,
+          description,
+          location,
+          participant_limit: Number(participantLimit),
+          reward_count: Number(rewardCount),
+          start_date: new Date(startDate * 1000).toISOString(),
+        },
+      ]);
 
-        // Save to Supabase
-        const { data, error } = await supabase.from('events').insert([
-          {
-            event_id: eventId,
-            organizer,
-            address: eventContract,
-            name,
-            description,
-            location,
-            participant_limit: Number(participantLimit),
-            reward_count: Number(rewardCount),
-            start_date: new Date(startDate * 1000).toISOString(),
-          },
-        ]);
+      if (error) {
+        console.error('Error inserting into Supabase:', error);
+        throw error;
+      } else {
+        console.log('Successfully saved event:', data);
+      }
 
-        if (error) {
-          console.error('Error inserting into Supabase:', error);
-          throw error;
-        } else {
-          console.log('Successfully saved event:', data);
-        }
+      // Link to multibaas
+      await contractsApi.linkAddressContract('ethereum', eventContract, {
+        label: `eventImplementation${eventId}`,
+        startingBlock: 'latest',
+      });
+    } else if (event.event.name === 'BattleStarted') {
+      const inputs = event.event.inputs;
 
-        // Link to multibaas
-        await contractsApi.linkAddressContract('ethereum', eventContract, {
-          label: `eventImplementation${eventId}`,
-          startingBlock: 'latest',
-        });
+      // Extract necessary fields
+      const battleId = inputs.find(
+        (input: EventField) => input.name === 'battleId'
+      )?.value;
+      const player1 = inputs.find(
+        (input: EventField) => input.name === 'player1'
+      )?.value;
+      const player2 = inputs.find(
+        (input: EventField) => input.name === 'player2'
+      )?.value;
+      const player1MinDmg = inputs.find(
+        (input: EventField) => input.name === 'player1MinDmg'
+      )?.value;
+      const player1MaxDmg = inputs.find(
+        (input: EventField) => input.name === 'player1MaxDmg'
+      )?.value;
+      const player2MinDmg = inputs.find(
+        (input: EventField) => input.name === 'player2MinDmg'
+      )?.value;
+      const player2MaxDmg = inputs.find(
+        (input: EventField) => input.name === 'player2MaxDmg'
+      )?.value;
+
+      // Save to Supabase
+      const { data, error } = await supabase.from('gameLobbies').insert([
+        {
+          code: generateLobbyCode(),
+          battle_id: battleId,
+          player1_address: player1,
+          player1_atk_min: Number(player1MinDmg),
+          player1_atk_max: Number(player1MaxDmg),
+          player1_health: 100,
+          player2_address: player2,
+          player2_atk_min: player1MinDmg,
+          player2_atk_max: player2MaxDmg,
+          player2_health: 100,
+        },
+      ]);
+
+      if (error) {
+        console.error('Error inserting into Supabase:', error);
+        throw error;
+      } else {
+        console.log('Successfully saved event:', data);
+      }
+    } else if (event.event.name === 'Attack') {
+      const inputs = event.event.inputs;
+
+      // Extract necessary fields
+      const battleId = inputs.find(
+        (input: EventField) => input.name === 'battleId'
+      )?.value;
+      const attacker = inputs.find(
+        (input: EventField) => input.name === 'attacker'
+      )?.value;
+      const damage = inputs.find(
+        (input: EventField) => input.name === 'damage'
+      )?.value;
+
+      // Save to Supabase
+      const { data, error } = await supabase.from('battleLogs').insert([
+        {
+          battle_id: battleId,
+          attacker,
+          damage,
+        },
+      ]);
+
+      if (error) {
+        console.error('Error inserting into Supabase:', error);
+        throw error;
+      } else {
+        console.log('Successfully saved event:', data);
       }
     }
 
