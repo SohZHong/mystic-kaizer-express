@@ -1,4 +1,4 @@
-# Express Webhook for (Mystic Kaizer)[https://github.com/SohZHong/blockchain-asg]
+# Express Webhook for [Mystic Kaizer](https://github.com/SohZHong/blockchain-asg)
 
 Mystic Kaizer Express is a TypeScript-based Node.js application built with the Express framework. It is designed to be containerized using Docker and orchestrated with Docker Compose. This repo is meant to act as the webhook server for the Mystic Kaizer application.
 
