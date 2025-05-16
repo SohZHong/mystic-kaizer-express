@@ -202,11 +202,30 @@ app.post('/webhook', async (req: Request, res: Response) => {
         }
       } else if (event.event.name === 'ParticipantRegistered') {
         const contractAddress = event.event.contract.address;
-
+        const inputs = event.event.inputs;
+        const participant = inputs.find(
+          (input: EventField) => input.name === 'participant'
+        )?.value;
         // Update Supabase Record
         await supabase.rpc('increment_registered_participants', {
           contract_address: contractAddress,
         });
+
+        const { data, error } = await supabase
+          .from('registration_logs')
+          .insert([
+            {
+              address: contractAddress,
+              wallet_address: participant,
+            },
+          ]);
+
+        if (error) {
+          console.error('Error inserting into Supabase:', error);
+          throw error;
+        } else {
+          console.log('Successfully saved event:', data);
+        }
       }
     }
     res.status(200).json({ success: true });
