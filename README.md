@@ -94,3 +94,46 @@ docker run -d -p 3001:3001 --env-file .env your-remote-repo/mystic-kaizer-expres
 ```
 
 Ensure that the `.env` file on the remote server is properly configured with the necessary environment variables.
+
+## What This Project Does
+
+Mystic Kaizer Express acts as a webhook receiver and middleware layer that integrates blockchain smart contract events (via **MultiBaas**) with a **PostgreSQL** database powered by **Supabase**.
+
+It listens for various smart contract events, processes the payloads, and updates or inserts records into corresponding Supabase tables. Here’s a high-level overview:
+
+### Event Handling
+
+#### EventCreated
+
+When a new event is created on-chain, the app:
+
+- Extracts metadata like organizer, description, location, etc.
+- Saves it to the events table in Supabase.
+- Sets an alias for the event contract on MultiBaas.
+- Links the contract in MultiBaas for future event tracking.
+
+#### BattleStarted
+
+Updates the gameLobbies table in Supabase with a battle ID once a match begins.
+
+#### Attack
+
+Logs each attack instance to the battleLogs table, tying it back to the specific battle via Supabase queries.
+
+#### EventStarted
+
+Marks an event as started and updates the reward count in the events table.
+
+#### ParticipantRegistered
+
+Triggers a Supabase stored procedure (`increment_registered_participants`) to update participant counts atomically.
+
+### Technologies in Use
+
+| Stack      | Role                                                         |
+| ---------- | ------------------------------------------------------------ |
+| Express.js | API server and webhook listener                              |
+| TypeScript | Strong typing and safer backend logic                        |
+| Supabase   | Database and RPC layer (PostgreSQL with realtime API access) |
+| MultiBaas  | Blockchain event gateway and contract abstraction layer      |
+| Docker     | Containerization for local and remote deployment             |
